@@ -51,8 +51,12 @@ Deno.serve(async (req) => {
 
     if (sessionsError) {
       console.error('Error fetching chat sessions:', sessionsError);
+      console.error('Error details:', JSON.stringify(sessionsError, null, 2));
       return new Response(
-        JSON.stringify({ error: 'Failed to fetch chat sessions' }),
+        JSON.stringify({ 
+          error: 'Failed to fetch chat sessions',
+          details: sessionsError.message || 'Unknown database error'
+        }),
         {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
