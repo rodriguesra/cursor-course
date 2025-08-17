@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Message } from './Message';
 import { ChatGPTInput } from './ChatGPTInput';
-import { sendChatMessage, generateChatId, generateImage, type ChatMessage as APIChatMessage } from '@/lib/api';
+import { Sidebar } from './Sidebar';
+import { sendChatMessage, generateChatId, generateImage, loadChat, type ChatMessage as APIChatMessage } from '@/lib/api';
 
 interface ChatMessage {
   id: string;
@@ -34,6 +35,34 @@ export const ChatInterface: React.FC = () => {
     const newChatId = generateChatId();
     setChatId(newChatId);
     console.log('New chat created with ID:', newChatId);
+  };
+
+  const loadChatMessages = async (chatId: string) => {
+    try {
+      console.log('Loading chat:', chatId);
+      setIsLoading(true);
+      
+      const result = await loadChat(chatId);
+      
+      // Transform database messages to component format
+      const transformedMessages: ChatMessage[] = result.messages.map((msg) => ({
+        id: msg.id,
+        content: msg.content,
+        role: msg.role,
+        timestamp: new Date(msg.created_at),
+        type: msg.type,
+        imageUrl: msg.image_url,
+      }));
+      
+      setMessages(transformedMessages);
+      setChatId(chatId);
+      console.log(`Loaded ${transformedMessages.length} messages for chat ${chatId}`);
+    } catch (error) {
+      console.error('Failed to load chat:', error);
+      // You could add a toast notification here
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSendMessage = async (content: string, mode: 'text' | 'image' = 'text') => {
@@ -126,58 +155,69 @@ export const ChatInterface: React.FC = () => {
   };
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Header */}
-      <div className="border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-gray-800">ChatGPT</h1>
-        <button
-          onClick={createNewChat}
-          disabled={isLoading}
-          className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          <span>New Chat</span>
-        </button>
-      </div>
+    <div className="flex h-full">
+      {/* Sidebar */}
+      <Sidebar
+        currentChatId={chatId}
+        onChatSelect={loadChatMessages}
+        onNewChat={createNewChat}
+        isLoading={isLoading}
+      />
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto bg-white px-6 py-6">
-        {messages.length === 0 ? (
-          <div className="flex h-full items-center justify-center">
-            <div className="text-center max-w-md">
-              <div className="w-16 h-16 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                </svg>
+      {/* Main Chat Area */}
+      <div className="flex h-full flex-col flex-1">
+        {/* Header */}
+        <div className="border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between">
+          <h1 className="text-xl font-semibold text-gray-800">ChatGPT</h1>
+          <button
+            onClick={createNewChat}
+            disabled={isLoading}
+            className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>New Chat</span>
+          </button>
+        </div>
+
+        {/* Messages Area */}
+        <div className="flex-1 overflow-y-auto bg-white px-6 py-6">
+          {messages.length === 0 ? (
+            <div className="flex h-full items-center justify-center">
+              <div className="text-center max-w-md">
+                <div className="w-16 h-16 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+                <h2 className="text-2xl font-semibold text-gray-900 mb-3">
+                  Hello! How can I assist you today?
+                </h2>
+                <p className="text-gray-500 text-base">
+                  Try asking a question to get started!
+                </p>
               </div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-3">
-                Hello! How can I assist you today?
-              </h2>
-              <p className="text-gray-500 text-base">
-                Try asking a question to get started!
-              </p>
             </div>
-          </div>
-        ) : (
-          <div className="max-w-3xl mx-auto">
-            {messages.map((message) => (
-              <Message
-                key={message.id}
-                content={message.content}
-                role={message.role}
-                type={message.type}
-                imageUrl={message.imageUrl}
-              />
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </div>
+          ) : (
+            <div className="max-w-3xl mx-auto">
+              {messages.map((message) => (
+                <Message
+                  key={message.id}
+                  content={message.content}
+                  role={message.role}
+                  type={message.type}
+                  imageUrl={message.imageUrl}
+                />
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
 
-      {/* Input Area */}
-      <ChatGPTInput onSendMessage={handleSendMessage} disabled={isLoading} />
+        {/* Input Area */}
+        <ChatGPTInput onSendMessage={handleSendMessage} disabled={isLoading} />
+      </div>
     </div>
   );
 };
