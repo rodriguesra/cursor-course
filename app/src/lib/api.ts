@@ -173,3 +173,44 @@ export async function loadChat(chatId: string): Promise<LoadChatResponse> {
     throw error;
   }
 }
+
+// Create chat interfaces
+export interface CreateChatRequest {
+  title?: string;
+}
+
+export interface CreateChatResponse {
+  success: boolean;
+  chatId: string;
+  session: {
+    id: string;
+    title: string;
+    created_at: string;
+    updated_at: string;
+  };
+}
+
+// Create a new chat session
+export async function createChat(title?: string): Promise<CreateChatResponse> {
+  try {
+    const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/create-chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqaXpteWhibWticmV5aHBldm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NDkyNzksImV4cCI6MjA3MTAyNTI3OX0.TvX-pYeU-v8wtvhPP2wD0FItiT384FtYrX2IvLadJrI`,
+      },
+      body: JSON.stringify({ title }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const result: CreateChatResponse = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Create chat API error:', error);
+    throw error;
+  }
+}

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Message } from './Message';
 import { ChatGPTInput } from './ChatGPTInput';
 import { Sidebar } from './Sidebar';
-import { sendChatMessage, generateChatId, generateImage, loadChat, type ChatMessage as APIChatMessage } from '@/lib/api';
+import { sendChatMessage, generateChatId, generateImage, loadChat, createChat, type ChatMessage as APIChatMessage } from '@/lib/api';
 
 interface ChatMessage {
   id: string;
@@ -17,6 +17,8 @@ export const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatId, setChatId] = useState<string>(() => generateChatId());
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [chatCreatedInDB, setChatCreatedInDB] = useState<boolean>(false);
+  const [sidebarRefreshTrigger, setSidebarRefreshTrigger] = useState<number>(0);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -34,6 +36,7 @@ export const ChatInterface: React.FC = () => {
     setMessages([]);
     const newChatId = generateChatId();
     setChatId(newChatId);
+    setChatCreatedInDB(false); // Reset chat creation status
     console.log('New chat created with ID:', newChatId);
   };
 
@@ -56,6 +59,7 @@ export const ChatInterface: React.FC = () => {
       
       setMessages(transformedMessages);
       setChatId(chatId);
+      setChatCreatedInDB(true); // This chat exists in DB
       console.log(`Loaded ${transformedMessages.length} messages for chat ${chatId}`);
     } catch (error) {
       console.error('Failed to load chat:', error);
@@ -65,8 +69,33 @@ export const ChatInterface: React.FC = () => {
     }
   };
 
+  const generateChatTitle = (firstMessage: string): string => {
+    // Generate a title from the first 50 characters, clean it up
+    const cleanMessage = firstMessage.trim().replace(/[^\w\s]/g, '');
+    return cleanMessage.length > 50 
+      ? cleanMessage.substring(0, 50) + '...' 
+      : cleanMessage || 'New Chat';
+  };
+
   const handleSendMessage = async (content: string, mode: 'text' | 'image' = 'text') => {
     if (isLoading) return;
+
+    // If this is the first message and chat hasn't been created in DB, create it
+    if (messages.length === 0 && !chatCreatedInDB) {
+      try {
+        const title = generateChatTitle(content);
+        console.log('Creating chat session with title:', title);
+        const result = await createChat(title);
+        setChatId(result.chatId);
+        setChatCreatedInDB(true);
+        // Trigger sidebar refresh to show the new chat
+        setSidebarRefreshTrigger(prev => prev + 1);
+        console.log('Chat session created in database:', result.chatId);
+      } catch (error) {
+        console.error('Failed to create chat session:', error);
+        // Continue with local chat ID if DB creation fails
+      }
+    }
 
     // Add user message
     const userMessage: ChatMessage = {
@@ -162,23 +191,14 @@ export const ChatInterface: React.FC = () => {
         onChatSelect={loadChatMessages}
         onNewChat={createNewChat}
         isLoading={isLoading}
+        refreshTrigger={sidebarRefreshTrigger}
       />
 
       {/* Main Chat Area */}
       <div className="flex h-full flex-col flex-1">
         {/* Header */}
-        <div className="border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between">
+        <div className="border-b border-gray-200 bg-white px-6 py-4">
           <h1 className="text-xl font-semibold text-gray-800">ChatGPT</h1>
-          <button
-            onClick={createNewChat}
-            disabled={isLoading}
-            className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            <span>New Chat</span>
-          </button>
         </div>
 
         {/* Messages Area */}

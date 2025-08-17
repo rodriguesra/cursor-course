@@ -12,13 +12,15 @@ interface SidebarProps {
   onChatSelect: (chatId: string) => void;
   onNewChat: () => void;
   isLoading?: boolean;
+  refreshTrigger?: number; // Used to trigger refresh from parent
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ 
   currentChatId, 
   onChatSelect, 
   onNewChat, 
-  isLoading = false 
+  isLoading = false,
+  refreshTrigger = 0
 }) => {
   const [chats, setChats] = useState<ChatSession[]>([]);
   const [fetchingChats, setFetchingChats] = useState(false);
@@ -67,7 +69,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   useEffect(() => {
     fetchChatHistory();
-  }, []);
+  }, [refreshTrigger]); // Refresh when trigger changes
 
   const LoadingSkeleton = () => (
     <div className="space-y-2">
