@@ -92,7 +92,8 @@ Deno.serve(async (req) => {
     
     // Save user message to database if chatId provided
     if (chatId && userMessage.role === 'user') {
-      await supabaseClient
+      console.log('Saving user message to DB with chatId:', chatId);
+      const { error: userInsertError } = await supabaseClient
         .from('chat_messages')
         .insert({
           chat_id: chatId,
@@ -100,6 +101,12 @@ Deno.serve(async (req) => {
           content: userMessage.content,
           type: 'text'
         });
+      
+      if (userInsertError) {
+        console.error('Error saving user message:', userInsertError);
+      } else {
+        console.log('User message saved successfully');
+      }
     }
 
     // Call OpenAI API with streaming
@@ -142,7 +149,8 @@ Deno.serve(async (req) => {
             if (done) {
               // Save complete assistant message to database
               if (chatId && assistantMessage.trim()) {
-                await supabaseClient
+                console.log('Saving assistant message to DB with chatId:', chatId);
+                const { error: assistantInsertError } = await supabaseClient
                   .from('chat_messages')
                   .insert({
                     chat_id: chatId,
@@ -150,6 +158,12 @@ Deno.serve(async (req) => {
                     content: assistantMessage.trim(),
                     type: 'text'
                   });
+                
+                if (assistantInsertError) {
+                  console.error('Error saving assistant message:', assistantInsertError);
+                } else {
+                  console.log('Assistant message saved successfully');
+                }
               }
               controller.close();
               break;

@@ -80,12 +80,15 @@ export const ChatInterface: React.FC = () => {
   const handleSendMessage = async (content: string, mode: 'text' | 'image' = 'text') => {
     if (isLoading) return;
 
-    // If this is the first message and chat hasn't been created in DB, create it
+    let currentChatId = chatId;
+
+    // If this is the first message and chat hasn't been created in DB, create it FIRST
     if (messages.length === 0 && !chatCreatedInDB) {
       try {
         const title = generateChatTitle(content);
         console.log('Creating chat session with title:', title);
         const result = await createChat(title);
+        currentChatId = result.chatId; // Use the new chat ID immediately
         setChatId(result.chatId);
         setChatCreatedInDB(true);
         // Trigger sidebar refresh to show the new chat
@@ -114,7 +117,7 @@ export const ChatInterface: React.FC = () => {
         // Handle image generation
         const result = await generateImage({
           prompt: content,
-          chatId: chatId,
+          chatId: currentChatId,
           quality: 'standard',
           size: '1024x1024'
         });
@@ -152,7 +155,7 @@ export const ChatInterface: React.FC = () => {
         // Send to Edge Function with streaming
         await sendChatMessage(
           apiMessages,
-          chatId,
+          currentChatId,
           (chunk: string) => {
             // Update the assistant message with streaming content
             setMessages(prev => 
