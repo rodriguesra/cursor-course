@@ -1,0 +1,11 @@
+# Task ID: 4
+# Title: Integrate OpenAI API for text generation
+# Status: pending
+# Dependencies: 1
+# Priority: high
+# Description: Set up the connection to OpenAI's API for text generation using the GPT-4.1-nano model.
+# Details:
+Create a service module to handle communication with OpenAI's API. Implement functions to send user messages to the GPT-4.1-nano model and receive responses. Set up proper error handling for API failures and rate limiting. Configure the API with appropriate parameters for the chat completion endpoint. Create a server-side route handler in NextJS to proxy requests to OpenAI for security.
+
+# Test Strategy:
+Test API integration by sending sample messages and verifying responses. Validate error handling by simulating API failures. Check that the correct model (gpt-4.1-nano-2025-04-14) is being used.

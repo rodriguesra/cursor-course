@@ -1,0 +1,177 @@
+---
+description: React component type definitions and prop interface patterns
+globs: *.tsx,**/components/**/*.ts
+---
+
+# React Component Type Patterns
+
+## **Component Props Interface Guidelines**
+
+### ✅ DO: Define Props at Component Level
+```typescript
+// ButtonProps defined in same file as Button component
+interface ButtonProps {
+  children: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'outline';
+  size?: 'sm' | 'md' | 'lg';
+  disabled?: boolean;
+  onClick?: () => void;
+  className?: string;
+}
+
+export const Button: React.FC<ButtonProps> = ({
+  children,
+  variant = 'primary',
+  size = 'md',
+  ...props
+}) => {
+  // Implementation
+};
+```
+
+### ✅ DO: Complex Props in Separate types.ts
+```typescript
+// src/components/DataTable/types.ts
+export interface Column<T> {
+  key: keyof T;
+  label: string;
+  sortable?: boolean;
+  render?: (value: T[keyof T], row: T) => React.ReactNode;
+}
+
+export interface DataTableProps<T> {
+  data: T[];
+  columns: Column<T>[];
+  loading?: boolean;
+  onSort?: (key: keyof T, direction: 'asc' | 'desc') => void;
+  pagination?: PaginationConfig;
+}
+
+// src/components/DataTable/DataTable.tsx
+import { DataTableProps } from './types';
+
+export function DataTable<T>({ data, columns, loading }: DataTableProps<T>) {
+  // Implementation
+}
+```
+
+## **Component Type Organization Patterns**
+
+### **Small Components (< 50 lines)**
+- Define props interface in the same file
+- Place interface above the component definition
+
+### **Medium Components (50-150 lines)**
+- Consider separate `types.ts` if props are complex
+- Keep simple props in component file
+
+### **Large Components (> 150 lines)**
+- Always use separate `types.ts` file
+- Organize by logical groupings (props, state, handlers)
+
+## **Common Prop Patterns**
+
+### ✅ Extending HTML Elements
+```typescript
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary';
+  loading?: boolean;
+}
+
+// Usage preserves all native button props
+<Button onClick={handleClick} disabled={loading} variant="primary">
+  Submit
+</Button>
+```
+
+### ✅ Generic Component Props
+```typescript
+interface SelectProps<T> {
+  options: T[];
+  value?: T;
+  onChange: (value: T) => void;
+  getLabel: (option: T) => string;
+  getValue: (option: T) => string | number;
+}
+
+function Select<T>({ options, value, onChange, getLabel, getValue }: SelectProps<T>) {
+  // Generic select implementation
+}
+```
+
+### ✅ Conditional Props with Discriminated Unions
+```typescript
+type AlertProps = 
+  | {
+      variant: 'success';
+      message: string;
+      action?: never;
+    }
+  | {
+      variant: 'error';
+      message: string;
+      action: {
+        label: string;
+        onClick: () => void;
+      };
+    };
+
+// TypeScript enforces that error alerts must have actions
+```
+
+## **Component Composition Patterns**
+
+### ✅ Compound Components
+```typescript
+// src/components/Card/types.ts
+export interface CardProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export interface CardHeaderProps {
+  title: string;
+  subtitle?: string;
+  actions?: React.ReactNode;
+}
+
+// src/components/Card/Card.tsx
+import { CardProps, CardHeaderProps } from './types';
+
+export const Card: React.FC<CardProps> & {
+  Header: React.FC<CardHeaderProps>;
+  Content: React.FC<{ children: React.ReactNode }>;
+} = ({ children, className }) => {
+  return <div className={className}>{children}</div>;
+};
+
+Card.Header = ({ title, subtitle, actions }) => {
+  // Header implementation
+};
+
+Card.Content = ({ children }) => {
+  // Content implementation
+};
+```
+
+## **Ref Forwarding Types**
+```typescript
+interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label?: string;
+  error?: string;
+}
+
+export const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ label, error, ...props }, ref) => {
+    return (
+      <div>
+        {label && <label>{label}</label>}
+        <input ref={ref} {...props} />
+        {error && <span className="error">{error}</span>}
+      </div>
+    );
+  }
+);
+
+Input.displayName = 'Input';
+```

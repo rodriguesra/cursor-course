@@ -42,7 +42,8 @@ Focus on simplistic design for now, just for development and basic styling. We'l
 Focus on MVP only. You can mention future improvements as a section but do not add it to the planning stage. 
 - No user auth
 - No deployment, CI/CD setup needed.
-- No testing required yet.- No dark mode/light mode.
+- No testing required yet.
+- No dark mode/light mode.
 - No animations
 - No keyboard shortcuts
 - Do not optimize API calls/performance.

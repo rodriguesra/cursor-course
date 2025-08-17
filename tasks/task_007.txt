@@ -1,0 +1,11 @@
+# Task ID: 7
+# Title: Implement OpenAI image generation integration
+# Status: pending
+# Dependencies: 4, 6
+# Priority: medium
+# Description: Add functionality to generate images using OpenAI's gpt-image-1 model.
+# Details:
+Extend the OpenAI service module to support image generation requests. Create a server-side route handler for image generation. Implement functions to send image prompts to the gpt-image-1 model and receive generated images. Set up image storage and retrieval, either locally or using Supabase storage. Follow the OpenAI_ImageGeneration.md documentation for implementation details.
+
+# Test Strategy:
+Test image generation by sending various prompts and verifying that images are generated correctly. Validate that images are properly stored and can be retrieved. Check error handling for failed image generation requests.

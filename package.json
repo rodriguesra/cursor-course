@@ -4,13 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev:local": "npm run dev"
+    "dev": "cd app && npm run dev",
+    "dev:local": "cd app && npm run dev:local",
+    "build": "cd app && npm run build",
+    "start": "cd app && npm run start",
+    "test": "cd app && npm test",
+    "lint": "cd app && npm run lint"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "task-master-ai": "^0.12.1"
+    "task-master-ai": "^0.24.0"
   }
 }

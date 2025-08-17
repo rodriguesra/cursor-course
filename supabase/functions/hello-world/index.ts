@@ -1,3 +1,5 @@
+/// <reference types="https://esm.sh/@supabase/functions-js/src/edge-runtime.d.ts" />
+
 // Follow this setup guide to integrate the Deno language server with your editor:
 // https://deno.land/manual/getting_started/setup_your_environment
 // This enables autocomplete, go to definition, etc.
@@ -68,7 +70,6 @@ Deno.serve(async (req) => {
     });
   }
 });
-
 /* To invoke locally:
 
   1. Run `supabase start` (see: https://supabase.com/docs/reference/cli/supabase-start)
@@ -80,3 +81,4 @@ Deno.serve(async (req) => {
     --data '{"name":"Functions"}'
 
 */
+

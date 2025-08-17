@@ -1,0 +1,267 @@
+---
+description: TypeScript import/export patterns and barrel file organization
+globs: *.ts,*.tsx
+---
+
+# TypeScript Import/Export Best Practices
+
+## **Import Organization Rules**
+
+### ✅ Import Grouping and Ordering
+```typescript
+// 1. External library imports
+import React, { useState, useEffect } from 'react';
+import { NextPage } from 'next';
+import { z } from 'zod';
+
+// 2. Internal absolute imports (using path aliases)
+import { Button, Input } from '@/components/ui';
+import { useAuth } from '@/hooks/auth';
+import { User, ApiResponse } from '@/types';
+
+// 3. Relative imports (same feature/module)
+import { UserCard } from './UserCard';
+import { useUserData } from '../hooks/useUserData';
+import type { UserFormProps } from './types';
+```
+
+### ✅ Type-only Imports
+```typescript
+// ✅ Good: Use type-only imports for types
+import type { User, Product } from '@/types';
+import type { ComponentProps } from 'react';
+
+// ✅ Good: Mixed imports with type modifier
+import { useState, type ReactNode } from 'react';
+
+// ❌ Avoid: Importing types as values
+import { User, Product } from '@/types'; // Could cause runtime issues
+```
+
+## **Barrel File Patterns**
+
+### ✅ Component Barrel Exports
+```typescript
+// src/components/ui/index.ts
+export { Button } from './Button/Button';
+export { Input } from './Input/Input';
+export { Modal } from './Modal/Modal';
+export { Card } from './Card/Card';
+
+// Re-export types if needed by consumers
+export type { ButtonProps } from './Button/types';
+export type { InputProps } from './Input/types';
+```
+
+### ✅ Feature-based Barrel Exports
+```typescript
+// src/features/auth/index.ts
+export { LoginForm } from './components/LoginForm';
+export { RegisterForm } from './components/RegisterForm';
+export { useAuth } from './hooks/useAuth';
+export { authApi } from './api/authApi';
+
+// Types
+export type { AuthUser, LoginFormData } from './types';
+```
+
+### ✅ Utility Barrel Exports
+```typescript
+// src/utils/index.ts
+export { formatDate, parseDate } from './date';
+export { validateEmail, validatePassword } from './validation';
+export { debounce, throttle } from './performance';
+
+// Type utilities
+export type { DateFormat, ValidationRule } from './types';
+```
+
+## **Export Patterns**
+
+### ✅ Named Exports (Preferred)
+```typescript
+// ✅ Good: Named exports for better tree-shaking
+export const Button: React.FC<ButtonProps> = ({ children, ...props }) => {
+  return <button {...props}>{children}</button>;
+};
+
+export const Input: React.FC<InputProps> = ({ label, ...props }) => {
+  return (
+    <div>
+      {label && <label>{label}</label>}
+      <input {...props} />
+    </div>
+  );
+};
+```
+
+### ✅ Default Exports (When Appropriate)
+```typescript
+// ✅ Good: Default export for main component/page
+interface UserProfilePageProps {
+  userId: string;
+}
+
+const UserProfilePage: NextPage<UserProfilePageProps> = ({ userId }) => {
+  // Page implementation
+};
+
+export default UserProfilePage;
+
+// ✅ Good: Also export named for testing/composition
+export { UserProfilePage };
+```
+
+### ✅ Mixed Export Patterns
+```typescript
+// src/hooks/useApi.ts
+import { useState, useEffect } from 'react';
+import type { ApiResponse } from '@/types';
+
+// Main hook as default export
+const useApi = <T>(url: string) => {
+  const [data, setData] = useState<T | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Implementation...
+
+  return { data, loading, error };
+};
+
+export default useApi;
+
+// Helper utilities as named exports
+export const createApiUrl = (path: string, params?: Record<string, string>) => {
+  // Implementation
+};
+
+export const handleApiError = (error: unknown): string => {
+  // Implementation
+};
+
+// Types for consumers
+export type UseApiReturn<T> = {
+  data: T | null;
+  loading: boolean;
+  error: string | null;
+};
+```
+
+## **Path Alias Configuration**
+
+### ✅ Recommended tsconfig.json paths
+```json
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/components/*": ["./src/components/*"],
+      "@/hooks/*": ["./src/hooks/*"],
+      "@/utils/*": ["./src/utils/*"],
+      "@/types/*": ["./src/types/*"],
+      "@/lib/*": ["./src/lib/*"],
+      "@/features/*": ["./src/features/*"]
+    }
+  }
+}
+```
+
+### ✅ Using Path Aliases Consistently
+```typescript
+// ✅ Good: Consistent alias usage
+import { Button } from '@/components/ui';
+import { useAuth } from '@/hooks/auth';
+import { User } from '@/types';
+import { formatDate } from '@/utils/date';
+
+// ❌ Avoid: Mixing relative and alias imports for same level
+import { Button } from '@/components/ui';
+import { Input } from '../ui/Input'; // Should use alias
+```
+
+## **Dynamic Imports and Code Splitting**
+
+### ✅ Component Lazy Loading
+```typescript
+// ✅ Good: Lazy load heavy components
+import { lazy, Suspense } from 'react';
+import type { ComponentProps } from 'react';
+
+const DataTable = lazy(() => import('@/components/DataTable'));
+const Chart = lazy(() => import('@/components/Chart'));
+
+// Type-safe dynamic import
+type DataTableProps = ComponentProps<typeof DataTable>;
+
+export const Dashboard = () => {
+  return (
+    <div>
+      <Suspense fallback={<div>Loading table...</div>}>
+        <DataTable data={tableData} />
+      </Suspense>
+      <Suspense fallback={<div>Loading chart...</div>}>
+        <Chart data={chartData} />
+      </Suspense>
+    </div>
+  );
+};
+```
+
+### ✅ Utility Dynamic Imports
+```typescript
+// ✅ Good: Dynamic import for large utilities
+export const loadHeavyUtility = async () => {
+  const { heavyFunction } = await import('@/utils/heavy-processing');
+  return heavyFunction;
+};
+
+// ✅ Good: Conditional imports
+export const loadPlatformUtils = async () => {
+  if (typeof window !== 'undefined') {
+    const { browserUtils } = await import('@/utils/browser');
+    return browserUtils;
+  } else {
+    const { serverUtils } = await import('@/utils/server');
+    return serverUtils;
+  }
+};
+```
+
+## **Anti-patterns to Avoid**
+
+### ❌ Circular Dependencies
+```typescript
+// ❌ Bad: Circular dependency
+// userService.ts
+import { logUserAction } from './auditService';
+
+// auditService.ts
+import { getCurrentUser } from './userService'; // Circular!
+```
+
+### ❌ Barrel Export Over-usage
+```typescript
+// ❌ Bad: Re-exporting everything creates large bundles
+// src/utils/index.ts
+export * from './date';
+export * from './string';
+export * from './array';
+export * from './validation';
+export * from './performance';
+// ... 20+ more utilities
+
+// Better: Create specific barrel files
+// src/utils/validation/index.ts - only validation utilities
+// src/utils/date/index.ts - only date utilities
+```
+
+### ❌ Deep Import Chains
+```typescript
+// ❌ Bad: Too many directory levels
+import { helper } from '@/components/features/user/profile/settings/advanced/helpers/validation';
+
+// ✅ Better: Flatter structure with clear boundaries
+import { profileValidation } from '@/features/user/validation';
+```

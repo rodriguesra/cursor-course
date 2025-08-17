@@ -1,0 +1,11 @@
+# Task ID: 8
+# Title: Create mode toggle for switching between text and image generation
+# Status: pending
+# Dependencies: 5, 7
+# Priority: medium
+# Description: Implement UI controls to allow users to switch between text chat and image generation modes.
+# Details:
+Design and implement a toggle switch UI component to switch between text and image modes. Update the chat interface to display the current mode. Modify the message input and submission logic to handle different modes. Update the message display to show generated images inline with text messages. Ensure clear visual indication of the active mode to users.
+
+# Test Strategy:
+Test mode switching and verify that the UI updates accordingly. Validate that the correct API endpoints are called based on the selected mode. Ensure that generated images are displayed correctly in the chat interface.

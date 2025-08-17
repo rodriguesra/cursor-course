@@ -1,0 +1,11 @@
+# Task ID: 9
+# Title: Implement New Chat functionality
+# Status: pending
+# Dependencies: 6
+# Priority: low
+# Description: Add the ability to start a fresh conversation while storing the previous chat.
+# Details:
+Create a "New Chat" button in the UI. Implement logic to save the current chat session to Supabase when starting a new chat. Generate a title for the chat session based on the first message. Clear the current conversation state and reset the interface when starting a new chat. Update the database schema to track the active chat session.
+
+# Test Strategy:
+Test creating new chats and verify that previous conversations are properly stored. Validate that the chat interface is reset correctly. Check that chat titles are generated and stored appropriately.

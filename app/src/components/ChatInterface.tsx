@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Message } from './Message';
 import { MessageInput } from './MessageInput';
+import { sendChatMessage, generateChatId, type ChatMessage as APIChatMessage } from '@/lib/api';
 
 interface ChatMessage {
   id: string;
@@ -11,6 +12,8 @@ interface ChatMessage {
 
 export const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [chatId] = useState<string>(() => generateChatId());
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -21,7 +24,9 @@ export const ChatInterface: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = (content: string) => {
+  const handleSendMessage = async (content: string) => {
+    if (isLoading) return;
+
     // Add user message
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -31,18 +36,58 @@ export const ChatInterface: React.FC = () => {
     };
 
     setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
 
-    // Simulate assistant response (for now)
-    setTimeout(() => {
-      const assistantMessage: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        content: "I'm a mock response! This is where the AI response would appear. The backend integration will replace this placeholder text.",
-        role: 'assistant',
-        timestamp: new Date(),
-      };
+    // Create assistant message placeholder
+    const assistantMessageId = (Date.now() + 1).toString();
+    const assistantMessage: ChatMessage = {
+      id: assistantMessageId,
+      content: '',
+      role: 'assistant',
+      timestamp: new Date(),
+    };
 
-      setMessages(prev => [...prev, assistantMessage]);
-    }, 1000);
+    setMessages(prev => [...prev, assistantMessage]);
+
+    try {
+      // Convert to API format
+      const apiMessages: APIChatMessage[] = [...messages, userMessage].map(msg => ({
+        role: msg.role,
+        content: msg.content,
+      }));
+
+      // Send to Edge Function with streaming
+      await sendChatMessage(
+        apiMessages,
+        chatId,
+        (chunk: string) => {
+          // Update the assistant message with streaming content
+          setMessages(prev => 
+            prev.map(msg => 
+              msg.id === assistantMessageId 
+                ? { ...msg, content: msg.content + chunk }
+                : msg
+            )
+          );
+        }
+      );
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      
+      // Update assistant message with error
+      setMessages(prev => 
+        prev.map(msg => 
+          msg.id === assistantMessageId 
+            ? { 
+                ...msg, 
+                content: 'Sorry, I encountered an error. Please try again.' 
+              }
+            : msg
+        )
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -85,7 +130,7 @@ export const ChatInterface: React.FC = () => {
       </div>
 
       {/* Input Area */}
-      <MessageInput onSendMessage={handleSendMessage} />
+      <MessageInput onSendMessage={handleSendMessage} disabled={isLoading} />
     </div>
   );
 };

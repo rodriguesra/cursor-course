@@ -1,0 +1,291 @@
+---
+description: Management and organization of shared TypeScript types across the application
+globs: src/types/**/*.ts,src/**/types.ts
+---
+
+# Shared Types Management
+
+## **Central Types Directory Structure**
+
+```
+src/types/
+  api/
+    auth.ts           // Authentication API types
+    users.ts          // User-related API types
+    products.ts       // Product API types
+    index.ts          // Barrel export for API types
+  models/
+    user.ts           // User domain model
+    product.ts        // Product domain model
+    index.ts          // Barrel export for models
+  utils/
+    common.ts         // Utility types
+    forms.ts          // Form-related types
+    index.ts          // Barrel export for utils
+  index.ts            // Master barrel export
+```
+
+## **API Response Types Organization**
+
+### ✅ Consistent API Response Structure
+```typescript
+// src/types/api/common.ts
+export interface ApiResponse<T = unknown> {
+  data: T;
+  status: number;
+  message: string;
+  timestamp: string;
+}
+
+export interface PaginatedResponse<T> extends ApiResponse<T[]> {
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface ApiError {
+  code: string;
+  message: string;
+  details?: Record<string, unknown>;
+}
+```
+
+### ✅ Feature-specific API Types
+```typescript
+// src/types/api/auth.ts
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface LoginResponse {
+  user: User;
+  token: string;
+  refreshToken: string;
+  expiresIn: number;
+}
+
+export interface RefreshTokenRequest {
+  refreshToken: string;
+}
+
+// src/types/api/users.ts
+export interface GetUsersParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: UserRole;
+}
+
+export interface CreateUserRequest {
+  name: string;
+  email: string;
+  role: UserRole;
+}
+
+export interface UpdateUserRequest extends Partial<CreateUserRequest> {
+  id: string;
+}
+```
+
+## **Domain Model Types**
+
+### ✅ Core Entity Models
+```typescript
+// src/types/models/user.ts
+export type UserRole = 'admin' | 'moderator' | 'user';
+export type UserStatus = 'active' | 'inactive' | 'pending' | 'suspended';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  status: UserStatus;
+  avatar?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserProfile extends User {
+  bio?: string;
+  preferences: UserPreferences;
+  statistics: UserStatistics;
+}
+
+export interface UserPreferences {
+  theme: 'light' | 'dark' | 'system';
+  language: string;
+  notifications: NotificationSettings;
+}
+```
+
+### ✅ Relationship and Derived Types
+```typescript
+// src/types/models/product.ts
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  category: ProductCategory;
+  tags: string[];
+  images: ProductImage[];
+  inventory: ProductInventory;
+  createdBy: string; // User ID
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProductCategory {
+  id: string;
+  name: string;
+  slug: string;
+  parent?: ProductCategory;
+}
+
+export interface ProductWithCreator extends Product {
+  creator: User; // Populated user object
+}
+```
+
+## **Utility and Helper Types**
+
+### ✅ Common Utility Types
+```typescript
+// src/types/utils/common.ts
+export type Nullable<T> = T | null;
+export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+export type RequireAtLeastOne<T> = {
+  [K in keyof T]-?: Required<Pick<T, K>> & Partial<Pick<T, Exclude<keyof T, K>>>;
+}[keyof T];
+
+export type DeepPartial<T> = {
+  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P];
+};
+
+export type WithTimestamps<T> = T & {
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type WithId<T> = T & { id: string };
+```
+
+### ✅ Form and Validation Types
+```typescript
+// src/types/utils/forms.ts
+export interface FormField<T = string> {
+  value: T;
+  error?: string;
+  touched: boolean;
+  dirty: boolean;
+}
+
+export type FormState<T> = {
+  [K in keyof T]: FormField<T[K]>;
+};
+
+export interface FormActions<T> {
+  setValue: <K extends keyof T>(field: K, value: T[K]) => void;
+  setError: <K extends keyof T>(field: K, error: string) => void;
+  setTouched: <K extends keyof T>(field: K, touched: boolean) => void;
+  reset: () => void;
+  validate: () => boolean;
+}
+
+export type ValidatorFunction<T> = (value: T) => string | undefined;
+export type FieldValidators<T> = {
+  [K in keyof T]?: ValidatorFunction<T[K]>[];
+};
+```
+
+## **Barrel Export Strategy**
+
+### ✅ Organized Barrel Exports
+```typescript
+// src/types/api/index.ts
+export * from './common';
+export * from './auth';
+export * from './users';
+export * from './products';
+
+// src/types/models/index.ts
+export * from './user';
+export * from './product';
+
+// src/types/utils/index.ts
+export * from './common';
+export * from './forms';
+
+// src/types/index.ts (Master barrel)
+export * from './api';
+export * from './models';
+export * from './utils';
+```
+
+## **Import Patterns**
+
+### ✅ Recommended Import Styles
+```typescript
+// ✅ Good: Barrel imports for frequently used types
+import { User, Product, ApiResponse } from '@/types';
+
+// ✅ Good: Specific imports for less common types
+import { FormField, ValidatorFunction } from '@/types/utils/forms';
+
+// ✅ Good: Namespace imports for large type groups
+import type * as API from '@/types/api';
+
+// Function using namespaced types
+function fetchUser(id: string): Promise<API.ApiResponse<User>> {
+  // Implementation
+}
+```
+
+### ❌ Anti-patterns to Avoid
+```typescript
+// ❌ Bad: Deep imports bypass barrel organization
+import { User } from '@/types/models/user';
+
+// ❌ Bad: Importing everything as namespace when only few types needed
+import * as Types from '@/types';
+
+// ❌ Bad: Mixed import styles in same file
+import { User } from '@/types';
+import { LoginRequest } from '@/types/api/auth';
+```
+
+## **Type Versioning and Migration**
+
+### ✅ Handling Breaking Changes
+```typescript
+// src/types/api/v1/users.ts
+export interface UserV1 {
+  id: string;
+  name: string;
+  email: string;
+}
+
+// src/types/api/v2/users.ts
+export interface UserV2 {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+// Migration utility
+export function migrateUserV1ToV2(userV1: UserV1): UserV2 {
+  const [firstName, ...lastNameParts] = userV1.name.split(' ');
+  return {
+    id: userV1.id,
+    firstName,
+    lastName: lastNameParts.join(' '),
+    email: userV1.email,
+  };
+}
+```

@@ -1,0 +1,116 @@
+---
+description: TypeScript file and type organization best practices for React projects
+globs: *.ts,*.tsx,*.d.ts
+---
+
+# TypeScript Organization Best Practices
+
+## **Type Co-location Strategy**
+
+- **Component-specific types**: Define within the same file at the top, or in a dedicated `types.ts` file inside the component's folder
+- **Shared types**: Place in central `src/types/` directory
+- **Feature-specific types**: Organize by domain in `src/features/[feature]/types.ts`
+
+## **Directory Structure Guidelines**
+
+```
+src/
+  components/
+    Button/
+      Button.tsx
+      types.ts          // ButtonProps and related types
+    UserProfile/
+      UserProfile.tsx
+      types.ts
+  features/
+    auth/
+      AuthForm.tsx
+      types.ts          // Auth-specific types
+  types/
+    api.ts              // Shared API response types
+    models.ts           // Shared data model types
+    index.ts            // Barrel file for exports
+  utils/
+```
+
+## **Type Placement Rules**
+
+| Type Usage | Location |
+|------------|----------|
+| Component Props | In component file or component's `types.ts` |
+| Feature/domain types | In `feature/[featureName]/types.ts` |
+| Global/shared types | In `src/types/` |
+| External declarations | In `typings/` or root-level `.d.ts` files |
+| Barrel exports | In `src/types/index.ts` |
+
+## **Implementation Examples**
+
+### ✅ Component-specific Types
+```typescript
+// src/components/Button/Button.tsx
+interface ButtonProps {
+  variant: 'primary' | 'secondary';
+  size: 'sm' | 'md' | 'lg';
+  onClick: () => void;
+}
+
+export const Button: React.FC<ButtonProps> = ({ variant, size, onClick }) => {
+  // Component implementation
+};
+```
+
+### ✅ Shared Types with Barrel Exports
+```typescript
+// src/types/api.ts
+export interface ApiResponse<T> {
+  data: T;
+  status: number;
+  message: string;
+}
+
+// src/types/models.ts
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+// src/types/index.ts
+export * from './api';
+export * from './models';
+```
+
+### ✅ Feature-based Organization
+```typescript
+// src/features/auth/types.ts
+export interface AuthUser {
+  id: string;
+  email: string;
+  role: 'admin' | 'user';
+}
+
+export interface LoginFormData {
+  email: string;
+  password: string;
+}
+```
+
+## **Naming Conventions**
+
+- Use `types.ts` for component or feature-specific types
+- Use descriptive names for shared type files (`api.ts`, `models.ts`)
+- Use `index.ts` as barrel files for grouped exports
+- Prefix interfaces with descriptive names (e.g., `UserProfile`, `ApiResponse`)
+
+## **Import Practices**
+
+```typescript
+// ✅ Good: Use barrel imports for shared types
+import { User, ApiResponse } from '@/types';
+
+// ✅ Good: Direct import for component-specific types
+import { ButtonProps } from './types';
+
+// ❌ Avoid: Deep imports from type files
+import { User } from '@/types/models';
+```
