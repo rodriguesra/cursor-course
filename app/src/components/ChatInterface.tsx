@@ -14,7 +14,7 @@ interface ChatMessage {
 
 export const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [chatId] = useState<string>(() => generateChatId());
+  const [chatId, setChatId] = useState<string>(() => generateChatId());
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -26,6 +26,15 @@ export const ChatInterface: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const createNewChat = () => {
+    console.log('Creating new chat...');
+    // Clear current messages and generate new chat ID
+    setMessages([]);
+    const newChatId = generateChatId();
+    setChatId(newChatId);
+    console.log('New chat created with ID:', newChatId);
+  };
 
   const handleSendMessage = async (content: string, mode: 'text' | 'image' = 'text') => {
     if (isLoading) return;
@@ -119,8 +128,18 @@ export const ChatInterface: React.FC = () => {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white px-6 py-4">
+      <div className="border-b border-gray-200 bg-white px-6 py-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold text-gray-800">ChatGPT</h1>
+        <button
+          onClick={createNewChat}
+          disabled={isLoading}
+          className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+          </svg>
+          <span>New Chat</span>
+        </button>
       </div>
 
       {/* Messages Area */}

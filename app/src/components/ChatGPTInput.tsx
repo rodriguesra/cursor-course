@@ -85,7 +85,7 @@ export const ChatGPTInput: React.FC<ChatGPTInputProps> = ({ onSendMessage, disab
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="flex items-end space-x-3 relative">
+        <form onSubmit={handleSubmit} className="flex items-center space-x-3 relative">
           {/* Plus button with dropdown */}
           <div className="relative" ref={dropdownRef}>
             <button
@@ -156,7 +156,11 @@ export const ChatGPTInput: React.FC<ChatGPTInputProps> = ({ onSendMessage, disab
           <button
             type="submit"
             disabled={!message.trim() || disabled}
-            className="flex h-12 w-12 items-center justify-center rounded-full bg-gray-200 text-gray-400 transition-colors hover:bg-gray-300 focus:outline-none disabled:bg-gray-200 disabled:cursor-not-allowed enabled:hover:bg-gray-300"
+            className={`flex h-12 w-12 items-center justify-center rounded-full transition-colors focus:outline-none ${
+              message.trim() && !disabled
+                ? 'bg-blue-600 text-white hover:bg-blue-700'
+                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+            }`}
           >
             <svg
               className="h-5 w-5"
