@@ -1,10 +1,13 @@
 "use client";
 import React from "react";
+import { ChatInterface } from "@/components/ChatInterface";
 
 export default function ChatDemoPage() {
   return (
-    <div className="min-h-screen flex bg-gray-50">
-      <h1>Welcome to the course!</h1>
+    <div className="h-screen flex bg-white">
+      <div className="flex-1 flex flex-col">
+        <ChatInterface />
+      </div>
     </div>
   );
 }
