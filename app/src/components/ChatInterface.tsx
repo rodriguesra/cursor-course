@@ -40,6 +40,13 @@ export const ChatInterface: React.FC = () => {
     console.log('New chat created with ID:', newChatId);
   };
 
+  const handleChatDeleted = (deletedChatId: string) => {
+    // If the deleted chat was the current one, create a new chat
+    if (chatId === deletedChatId) {
+      createNewChat();
+    }
+  };
+
   const loadChatMessages = async (chatId: string) => {
     try {
       console.log('Loading chat:', chatId);
@@ -195,6 +202,7 @@ export const ChatInterface: React.FC = () => {
         onNewChat={createNewChat}
         isLoading={isLoading}
         refreshTrigger={sidebarRefreshTrigger}
+        onChatDeleted={handleChatDeleted}
       />
 
       {/* Main Chat Area */}

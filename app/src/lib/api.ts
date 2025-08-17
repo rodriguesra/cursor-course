@@ -214,3 +214,84 @@ export async function createChat(title?: string): Promise<CreateChatResponse> {
     throw error;
   }
 }
+
+// Update chat interfaces
+export interface UpdateChatRequest {
+  chatId: string;
+  title: string;
+}
+
+export interface UpdateChatResponse {
+  success: boolean;
+  message: string;
+  updatedChat: {
+    id: string;
+    title: string;
+    created_at: string;
+    updated_at: string;
+  };
+}
+
+// Update a chat session title
+export async function updateChat(chatId: string, title: string): Promise<UpdateChatResponse> {
+  try {
+    const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/update-chat`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqaXpteWhibWticmV5aHBldm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NDkyNzksImV4cCI6MjA3MTAyNTI3OX0.TvX-pYeU-v8wtvhPP2wD0FItiT384FtYrX2IvLadJrI`,
+      },
+      body: JSON.stringify({ chatId, title }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const result: UpdateChatResponse = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Update chat API error:', error);
+    throw error;
+  }
+}
+
+// Delete chat interfaces
+export interface DeleteChatRequest {
+  chatId: string;
+}
+
+export interface DeleteChatResponse {
+  success: boolean;
+  message: string;
+  deletedChat: {
+    id: string;
+    title: string;
+  };
+}
+
+// Delete a chat session and all its messages
+export async function deleteChat(chatId: string): Promise<DeleteChatResponse> {
+  try {
+    const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/delete-chat`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqaXpteWhibWticmV5aHBldm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NDkyNzksImV4cCI6MjA3MTAyNTI3OX0.TvX-pYeU-v8wtvhPP2wD0FItiT384FtYrX2IvLadJrI`,
+      },
+      body: JSON.stringify({ chatId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const result: DeleteChatResponse = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Delete chat API error:', error);
+    throw error;
+  }
+}
