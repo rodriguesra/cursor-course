@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 interface MessageInputProps {
   onSendMessage: (message: string) => void;
   disabled?: boolean;
+  mode?: 'text' | 'image';
 }
 
-export const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, disabled = false }) => {
+export const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, disabled = false, mode = 'text' }) => {
   const [message, setMessage] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -32,7 +33,7 @@ export const MessageInput: React.FC<MessageInputProps> = ({ onSendMessage, disab
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Message ChatGPT..."
+              placeholder={mode === 'text' ? "Message ChatGPT..." : "Describe the image you want to generate..."}
               disabled={disabled}
               className="w-full resize-none rounded-xl border border-gray-300 px-4 py-3 text-sm placeholder-gray-400 focus:border-gray-400 focus:outline-none focus:ring-0 disabled:bg-gray-50 disabled:text-gray-500 shadow-sm"
               rows={1}

@@ -1,19 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Message } from './Message';
-import { MessageInput } from './MessageInput';
-import { sendChatMessage, generateChatId, type ChatMessage as APIChatMessage } from '@/lib/api';
+import { ChatGPTInput } from './ChatGPTInput';
+import { sendChatMessage, generateChatId, generateImage, type ChatMessage as APIChatMessage } from '@/lib/api';
 
 interface ChatMessage {
   id: string;
   content: string;
   role: 'user' | 'assistant';
   timestamp: Date;
+  type?: 'text' | 'image';
+  imageUrl?: string;
 }
 
 export const ChatInterface: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatId] = useState<string>(() => generateChatId());
   const [isLoading, setIsLoading] = useState<boolean>(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -24,7 +27,7 @@ export const ChatInterface: React.FC = () => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, mode: 'text' | 'image' = 'text') => {
     if (isLoading) return;
 
     // Add user message
@@ -33,58 +36,81 @@ export const ChatInterface: React.FC = () => {
       content,
       role: 'user',
       timestamp: new Date(),
+      type: mode,
     };
 
     setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
 
-    // Create assistant message placeholder
-    const assistantMessageId = (Date.now() + 1).toString();
-    const assistantMessage: ChatMessage = {
-      id: assistantMessageId,
-      content: '',
-      role: 'assistant',
-      timestamp: new Date(),
-    };
-
-    setMessages(prev => [...prev, assistantMessage]);
-
     try {
-      // Convert to API format
-      const apiMessages: APIChatMessage[] = [...messages, userMessage].map(msg => ({
-        role: msg.role,
-        content: msg.content,
-      }));
+      if (mode === 'image') {
+        // Handle image generation
+        const result = await generateImage({
+          prompt: content,
+          chatId: chatId,
+          quality: 'standard',
+          size: '1024x1024'
+        });
 
-      // Send to Edge Function with streaming
-      await sendChatMessage(
-        apiMessages,
-        chatId,
-        (chunk: string) => {
-          // Update the assistant message with streaming content
-          setMessages(prev => 
-            prev.map(msg => 
-              msg.id === assistantMessageId 
-                ? { ...msg, content: msg.content + chunk }
-                : msg
-            )
-          );
-        }
-      );
+        // Add assistant message with generated image
+        const assistantMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          content: result.prompt,
+          role: 'assistant',
+          timestamp: new Date(),
+          type: 'image',
+          imageUrl: result.imageUrl,
+        };
+
+        setMessages(prev => [...prev, assistantMessage]);
+      } else {
+        // Handle text chat with streaming
+        const assistantMessageId = (Date.now() + 1).toString();
+        const assistantMessage: ChatMessage = {
+          id: assistantMessageId,
+          content: '',
+          role: 'assistant',
+          timestamp: new Date(),
+          type: 'text',
+        };
+
+        setMessages(prev => [...prev, assistantMessage]);
+
+        // Convert to API format
+        const apiMessages: APIChatMessage[] = [...messages, userMessage].map(msg => ({
+          role: msg.role,
+          content: msg.content,
+        }));
+
+        // Send to Edge Function with streaming
+        await sendChatMessage(
+          apiMessages,
+          chatId,
+          (chunk: string) => {
+            // Update the assistant message with streaming content
+            setMessages(prev => 
+              prev.map(msg => 
+                msg.id === assistantMessageId 
+                  ? { ...msg, content: msg.content + chunk }
+                  : msg
+              )
+            );
+          }
+        );
+      }
     } catch (error) {
       console.error('Failed to send message:', error);
       
-      // Update assistant message with error
-      setMessages(prev => 
-        prev.map(msg => 
-          msg.id === assistantMessageId 
-            ? { 
-                ...msg, 
-                content: 'Sorry, I encountered an error. Please try again.' 
-              }
-            : msg
-        )
-      );
+      // Add error message
+      const errorMessage: ChatMessage = {
+        id: (Date.now() + 2).toString(),
+        content: 'Sorry, I encountered an error. Please try again.',
+        role: 'assistant',
+        timestamp: new Date(),
+        type: 'text',
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -122,6 +148,8 @@ export const ChatInterface: React.FC = () => {
                 key={message.id}
                 content={message.content}
                 role={message.role}
+                type={message.type}
+                imageUrl={message.imageUrl}
               />
             ))}
             <div ref={messagesEndRef} />
@@ -130,7 +158,7 @@ export const ChatInterface: React.FC = () => {
       </div>
 
       {/* Input Area */}
-      <MessageInput onSendMessage={handleSendMessage} disabled={isLoading} />
+      <ChatGPTInput onSendMessage={handleSendMessage} disabled={isLoading} />
     </div>
   );
 };

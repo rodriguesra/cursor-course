@@ -82,3 +82,46 @@ export async function sendChatMessage(
 export function generateChatId(): string {
   return `chat_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
+
+// Image generation interfaces
+export interface ImageGenerationRequest {
+  prompt: string;
+  chatId?: string;
+  size?: '1024x1024' | '1024x1792' | '1792x1024';
+  quality?: 'standard' | 'hd';
+}
+
+export interface ImageGenerationResponse {
+  success: boolean;
+  imageUrl: string;
+  prompt: string;
+  size: string;
+  quality: string;
+}
+
+// Generate an image using OpenAI's gpt-image-1 model
+export async function generateImage(
+  request: ImageGenerationRequest
+): Promise<ImageGenerationResponse> {
+  try {
+    const response = await fetch(`${SUPABASE_FUNCTIONS_URL}/image-generation`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqaXpteWhibWticmV5aHBldm5iIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTU0NDkyNzksImV4cCI6MjA3MTAyNTI3OX0.TvX-pYeU-v8wtvhPP2wD0FItiT384FtYrX2IvLadJrI`,
+      },
+      body: JSON.stringify(request),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+    }
+
+    const result: ImageGenerationResponse = await response.json();
+    return result;
+  } catch (error) {
+    console.error('Image generation API error:', error);
+    throw error;
+  }
+}
